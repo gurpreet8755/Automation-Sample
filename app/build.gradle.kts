@@ -17,7 +17,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("/Users/rockysingh/drives/Professiosnal/G-Work/Projects/DemoGithubautomation/app/automation-keystore.jks")
+            storePassword = "Github@0055"
+            keyAlias = "Automation-github"
+            keyPassword = "Github@0055"
+        }
+    }
+
     buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
