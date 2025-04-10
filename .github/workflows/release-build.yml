@@ -1,133 +1,58 @@
-name: Android Production Build
+name: Android Release Build
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    name: Generate Production Build
+    name: Build Release APK with Keystore
     runs-on: macos-latest
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17' # Or your project's Java version
+          java-version: '17'
 
-      - name: Cache Gradle Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.gradle/caches
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+      - name: Decode Keystore File
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > release-keystore.jks
 
-      - name: Make Gradle Executable
+      - name: Configure Gradle Signing
+        run: |
+          echo "
+          android {
+              signingConfigs {
+                  release {
+                      storeFile file('release-keystore.jks')
+                      storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
+                      keyAlias '${{ secrets.KEY_ALIAS }}'
+                      keyPassword '${{ secrets.KEY_PASSWORD }}'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }" >> app/release-signing.gradle
+
+      - name: Include Signing in build.gradle
+        run: |
+          echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
+
+      - name: Make gradlew Executable
         run: chmod +x ./gradlew
 
-      - name: Create signing.properties (if not using key.properties)
-        if: "! exists('keystore.properties')"
-        run: |
-          echo "storeFile=${{ secrets.KEYSTORE_FILE_BASE64 }}" > signing.properties
-          echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> signing.properties
-          echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> signing.properties
-          echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> signing.properties
+      - name: Build Signed Release APK
+        run: ./gradlew assembleRelease
 
-      - name: Copy Keystore File
-        run: |
-          mkdir -p app/keystore
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > app/keystore/production.keystore # Adjust filename and path as needed
-
-      - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
-
-      - name: Build Release AAB (Optional)
-        run: ./gradlew bundleRelease --stacktrace
-
-      - name: Upload Release APK
+      - name: Upload Signed APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release.apk
+          name: app-release
           path: app/build/outputs/apk/release/app-release.apk
-
-      - name: Upload Release AAB (Optional)
-        if: success() && steps.build_release_aab.outcome == 'success'
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.aab
-          path: app/build/outputs/bundle/release/app-release.aab
-
-# Example of how to use the outputs for further actions (e.g., deployment)
-#      - name: Deploy to Firebase App Distribution (Example)
-#        uses: w9jds/firebase-app-distribution@v1
-#        with:
-#          appId: ${{ secrets.FIREBASE_APP_ID }}
-#          token: ${{ secrets.FIREBASE_DISTRIBUTION_TOKEN }}
-#          groups: testers
-#          file: app/build/outputs/apk/release/app-release.apk
-#          releaseNotes: "Automated production build"
-
-
-
-# name: Android Release Build
-
-# on:
-#   workflow_dispatch:
-
-# jobs:
-#   build:
-#     name: Build Release APK with Keystore
-#     runs-on: macos-latest
-
-#     steps:
-#       - name: Checkout Code
-#         uses: actions/checkout@v3
-
-#       - name: Set up JDK
-#         uses: actions/setup-java@v3
-#         with:
-#           distribution: 'temurin'
-#           java-version: '17'
-
-#       - name: Decode Keystore File
-#         run: |
-#           echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > release-keystore.jks
-
-#       - name: Configure Gradle Signing
-#         run: |
-#           echo "
-#           android {
-#               signingConfigs {
-#                   release {
-#                       storeFile file('release-keystore.jks')
-#                       storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
-#                       keyAlias '${{ secrets.KEY_ALIAS }}'
-#                       keyPassword '${{ secrets.KEY_PASSWORD }}'
-#                   }
-#               }
-#               buildTypes {
-#                   release {
-#                       signingConfig signingConfigs.release
-#                   }
-#               }
-#           }" >> app/release-signing.gradle
-
-#       - name: Include Signing in build.gradle
-#         run: |
-#           echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
-
-#       - name: Make gradlew Executable
-#         run: chmod +x ./gradlew
-
-#       - name: Build Signed Release APK
-#         run: ./gradlew assembleRelease
-
-#       - name: Upload Signed APK
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: app-release
-#           path: app/build/outputs/apk/release/app-release.apk
