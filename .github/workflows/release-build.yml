@@ -43,7 +43,7 @@ jobs:
 
       - name: Include Signing in build.gradle
         run: |
-          echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
+          echo "apply from: 'app/build.gradle'" >> app/build.gradle
 
       - name: Make gradlew Executable
         run: chmod +x ./gradlew
