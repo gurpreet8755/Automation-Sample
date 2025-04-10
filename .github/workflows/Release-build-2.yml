@@ -1,37 +1,56 @@
-name: Android Production Build
+name: Android Release Build
 
 on:
-  workflow_dispatch: # Allows manual triggering
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build Signed APK
     runs-on: macos-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up JDK
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        
-    - name: Decode Keystore
-      run: |
-        echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > app/keystore.jks
-        
-    - name: Set up Android SDK
-      uses: android-actions/setup-android@v2
-      
-    - name: Build Release APK
-      run: ./gradlew assembleRelease \
-          -Pandroid.injected.signing.store.file=../app/keystore.jks \
-          -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-          -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-          -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
-          
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: app-release
-        path: android/app/build/outputs/apk/release/app-release.apk
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Decode Keystore File
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > release-key.jks
+
+      - name: Create Signing Config File
+        run: |
+          echo "android {
+              signingConfigs {
+                  release {
+                      storeFile file('../release-key.jks')
+                      storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
+                      keyAlias '${{ secrets.KEY_ALIAS }}'
+                      keyPassword '${{ secrets.KEY_PASSWORD }}'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }" > app/release-signing.gradle
+
+      - name: Apply Signing Config
+        run: echo "apply from: 'release-signing.gradle'" >> app/build.gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Signed Release APK
+          path: app/build/outputs/apk/release/app-release.apk
