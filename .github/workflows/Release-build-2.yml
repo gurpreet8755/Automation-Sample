@@ -1,0 +1,56 @@
+name: Android Release Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Signed APK
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Decode Keystore File
+        run: |
+          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > release-key.jks
+
+      - name: Create Signing Config File
+        run: |
+          echo "android {
+              signingConfigs {
+                  release {
+                      storeFile file('../release-key.jks')
+                      storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
+                      keyAlias '${{ secrets.KEY_ALIAS }}'
+                      keyPassword '${{ secrets.KEY_PASSWORD }}'
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                  }
+              }
+          }" > app/release-signing.gradle
+
+      - name: Apply Signing Config
+        run: echo "apply from: 'release-signing.gradle'" >> app/build.gradle
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: Signed Release APK
+          path: app/build/outputs/apk/release/app-release.apk
