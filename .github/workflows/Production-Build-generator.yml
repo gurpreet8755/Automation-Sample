@@ -42,7 +42,7 @@ jobs:
           }" > app/release-signing.gradle
 
       - name: Apply Signing Config
-        run: echo "apply from: 'release-signing.gradle'" >> app/build.gradle
+        run: echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
