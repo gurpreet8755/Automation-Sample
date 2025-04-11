@@ -24,9 +24,7 @@ jobs:
 
       - name: Configure Gradle Signing
         run: |
-          echo "
-          android {
-              signingConfigs {
+          echo "signingConfigs {
                   release {
                       storeFile file('../release-keystore.jks')
                       storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
@@ -38,8 +36,7 @@ jobs:
                    release {
                       signingConfig signingConfigs.release
                   }
-              }
-          }" >> app/release-signing.gradle
+              }" >> app/release-signing.gradle
 
       - name: Include Signing in build.gradle
         run: |
