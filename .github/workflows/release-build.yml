@@ -39,11 +39,11 @@ jobs:
                       signingConfig signingConfigs.release
                   }
               }
-          }" >> release-signing.gradle
+          }" >> app/release-signing.gradle
 
       - name: Include Signing in build.gradle
         run: |
-          echo "apply from: 'release-signing.gradle'" >> app/build.gradle
+          echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
 
       - name: Make gradlew Executable
         run: chmod +x ./gradlew
