@@ -28,7 +28,7 @@ jobs:
           android {
               signingConfigs {
                   create("release") {
-                      storeFile file('release-keystore.jks')
+                      storeFile file('../release-keystore.jks')
                       storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
                       keyAlias '${{ secrets.KEY_ALIAS }}'
                       keyPassword '${{ secrets.KEY_PASSWORD }}'
@@ -43,7 +43,7 @@ jobs:
 
       - name: Include Signing in build.gradle
         run: |
-          echo "apply from: 'app/release-signing.gradle'" >> app/build.gradle
+          echo "apply from: 'release-signing.gradle'" >> app/build.gradle
 
       - name: Make gradlew Executable
         run: chmod +x ./gradlew
