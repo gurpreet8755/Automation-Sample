@@ -5,51 +5,31 @@ on:
 
 jobs:
   build:
-    name: Build Release APK with Keystore
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: 17
 
-      - name: Decode Keystore File
-        run: |
-          echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 --decode > release-keystore.jks
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > release-keystore.jks
 
-      - name: Configure Gradle Signing
-        run: |
-          echo "signingConfigs {
-                  release {
-                      storeFile file('../release-keystore.jks')
-                      storePassword '${{ secrets.KEYSTORE_PASSWORD }}'
-                      keyAlias '${{ secrets.KEY_ALIAS }}'
-                      keyPassword '${{ secrets.KEY_PASSWORD }}'
-                  }
-              }
-              buildTypes {
-                   release {
-                      signingConfig signingConfigs.release
-                  }
-              }" >> app/release-signing.gradle
-
-      - name: Include Signing in build.gradle
-        run: |
-          echo "apply from: 'release-signing.gradle'" >> app/build.gradle
-
-      - name: Make gradlew Executable
-        run: chmod +x ./gradlew
-
-      - name: Build Signed Release APK
+      - name: Build Release APK
         run: ./gradlew assembleRelease
+        env:
+          KEYSTORE_FILE: release-keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Upload Signed APK
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
+          name: release-apk
           path: app/build/outputs/apk/release/app-release.apk
