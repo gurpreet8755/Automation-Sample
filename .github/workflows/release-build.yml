@@ -17,6 +17,16 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Cache Gradle files
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
       - name: Decode keystore
         run: echo "${{ secrets.KEYSTORE_FILE_BASE64 }}" | base64 -d > automation-sample.jks
 
