@@ -6,7 +6,6 @@ plugins {
 }
 
 
-
 val keystoreProps = Properties()
 val localPropsFile = rootProject.file("local.properties")
 
@@ -15,6 +14,7 @@ if (localPropsFile.exists()) {
         keystoreProps.load(it)
     }
 }
+
 
 android {
     namespace = "com.nk.demogithubautomation"
@@ -38,7 +38,6 @@ android {
     }
 
 
-
 //    signingConfigs {
 //        create("release") {
 //            storeFile = file("/Users/rockysingh/drives/Professiosnal/G-Work/Projects/DemoGithubautomation/app/automation-keystore.jks")
@@ -50,8 +49,15 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(keystoreProps["KEYSTORE_FILE_BASE64"] as? String
-                ?: System.getenv("KEYSTORE_FILE_BASE64"))
+            if (keystoreProps["KEYSTORE_FILE_BASE64"] != null) {
+                storeFile = file(keystoreProps["KEYSTORE_FILE_BASE64"] as String)
+            } else {
+                storeFile = file(System.getenv("KEYSTORE_FILE_BASE64"))
+            }
+//            storeFile = file(
+//                keystoreProps["KEYSTORE_FILE_BASE64"] as? String
+//                    ?: System.getenv("KEYSTORE_FILE_BASE64")
+//            )
             storePassword = keystoreProps["KEYSTORE_PASSWORD"] as? String
                 ?: System.getenv("KEYSTORE_PASSWORD")
             keyAlias = keystoreProps["KEY_ALIAS"] as? String
