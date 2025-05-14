@@ -116,5 +116,22 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+
+    implementation(libs.android.holo.graph)
+    implementation(libs.joda.time)
+
+    testImplementation(libs.junit.v412)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.joda.time)
+    testImplementation(libs.junit)
+
+    androidTestImplementation(libs.androidx.junit.v112)
+    androidTestImplementation(libs.androidx.espresso.core.v330)
+    androidTestImplementation(libs.androidx.espresso.contrib)
+    androidTestImplementation(libs.androidx.espresso.intents)
+
+
+
 }
 
